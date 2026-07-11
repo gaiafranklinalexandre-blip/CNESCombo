@@ -1,0 +1,15 @@
+# API PHP — nunca versionar (contém credenciais reais de banco). Sobe manualmente no Hostinger.
+sync-combo.php
+
+# Bases de dados locais — nunca versionar
+*.xlsx
+*.csv
+*.pbix
+
+# Arquivos de sistema
+desktop.ini
+~$*
+
+# Python
+__pycache__/
+*.pyc
