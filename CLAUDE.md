@@ -71,6 +71,26 @@ Uma linha por `(cnes, co_equipamento, competencia)`. Campos: `cnes, nome_fantasi
 
 ---
 
+## Regra crítica de negócio: linha de base e "itens do combo"
+
+O painel **não é um espelho da base** — ele precisa calcular quantos equipamentos foram efetivamente entregues pelo programa Combo, distinguindo do que já existia antes.
+
+- **Linha de base:** competência `2026-01` (marco zero da entrega do combo). Definida em `sync-combo.php` como `BASELINE_COMPETENCIA = '2026-01-01'`.
+- Alguns equipamentos **já existiam** em alguns estabelecimentos antes do combo (ex: câmara para conservação de imunobiológicos) — isso é esperado e **não conta** como item do combo.
+- Outros equipamentos começaram **zerados** e passaram a ser cadastrados depois — esses são de fato do combo.
+- **Fórmula:** `incremento_combo = GREATEST(quantidade_competencia_atual - quantidade_em_2026-01, 0)`, calculado por `(cnes, co_equipamento)`. Feito via `LEFT JOIN` da tabela `combo_equipamentos` com ela mesma (linha atual vs linha da competência baseline) — **não é armazenado**, é calculado em tempo de consulta no `sync-combo.php`. Isso evita reprocessar o histórico no Python a cada sync.
+- Exemplo do usuário: 10 geladeiras em `2026-01`, 11 em `2026-02` → **1 item do combo cadastrado** naquele CNES/equipamento.
+- Na própria competência baseline (`2026-01`), `incremento_combo` é sempre 0 para todos — é o marco zero, por definição.
+
+### Métricas derivadas dessa regra
+- **Itens do combo cadastrados** (volume): `SUM(incremento_combo)` — quantas unidades a mais foram registradas desde a baseline.
+- **Cobertura (% de cadastro dos equipamentos)**: proporção de slots `(cnes × equipamento)` com `incremento_combo > 0` sobre o total de slots — mede quantos dos "espaços esperados" já receberam pelo menos 1 unidade do combo. Não confundir com o volume: um CNES pode ter `incremento_combo = 5` num único equipamento e isso conta como 1 slot coberto.
+- **CNES com pelo menos 1 item do combo**: `COUNT(DISTINCT cnes)` onde algum equipamento daquele CNES tem `incremento_combo > 0` na competência.
+- **Lista de prioridade de contato**: CNES onde `SUM(incremento_combo) = 0` em todos os equipamentos na competência mais recente — candidatos a contato ativo, pois ainda não começaram a cadastrar nenhum item do combo. Exportável em CSV com UF/município para facilitar a ação.
+- **Panorama (gráfico de evolução)**: série temporal de `itens_cadastrados` e `% cobertura` por competência — mostra o crescimento do cadastro ao longo do tempo desde a baseline.
+
+---
+
 ## Regras principais de desenvolvimento
 
 - Não usar frameworks JS — vanilla JS, mesmo padrão do Painel Credenciamento.

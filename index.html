@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Combo de Equipamentos — APS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:        #1351B4;
+  --blue-hover:  #2670E8;
+  --blue-light:  #D4E3FF;
+  --blue-bg:     #EEF2FB;
+  --green:       #168821;
+  --green-light: #E3F5E1;
+  --red:         #E52207;
+  --red-light:   #FFE8E5;
+  --yellow:      #FFCD07;
+  --yellow-light:#FFF5C2;
+  --gray-bg:     #F0F0F5;
+  --gray-border: #E0E0E0;
+  --text:        #1C1C1C;
+  --text-mid:    #666;
+  --white:       #fff;
+  --radius:      50px;
+  --card-r:      12px;
+  --shadow:      0 2px 12px rgba(0,0,0,0.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Raleway', sans-serif; background: var(--gray-bg); color: var(--text); font-size: 14px; }
+
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--white); box-shadow: var(--shadow);
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto; padding: 16px 28px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.header-title { font-size: 19px; font-weight: 800; color: var(--blue); }
+.header-sub { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+.header-att { font-size: 11px; color: var(--text-mid); text-align: right; }
+
+/* Filtros */
+.filtros {
+  background: var(--gray-bg); border-bottom: 1px solid var(--gray-border);
+  padding: 10px 28px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.filtros-label {
+  font-size: 11px; font-weight: 700; color: var(--text-mid);
+  text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
+}
+.filtros select, .filtros input {
+  border: 1px solid var(--gray-border); border-radius: var(--radius);
+  padding: 7px 28px 7px 12px; font-size: 12px; font-family: inherit;
+  color: var(--text); background: var(--white); cursor: pointer;
+}
+.filtros select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'%3E%3Cpath fill='%231351B4' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+.filtros input[type=text] { cursor: text; padding: 7px 12px; width: 110px; }
+.filtros select:focus, .filtros input:focus { outline: 2px solid var(--blue); }
+.filtros-limpar {
+  font-size: 12px; color: var(--blue); font-weight: 600; font-family: inherit;
+  background: none; border: none; cursor: pointer; padding: 4px 8px;
+  border-radius: 4px; display: none;
+}
+.filtros-limpar:hover { background: var(--blue-bg); }
+.filtros-ativas { font-size: 11px; color: var(--blue); font-weight: 700; }
+
+/* Body / layout */
+.dash-body { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; }
+.secao-titulo {
+  font-size: 15px; font-weight: 800; color: var(--text); margin: 32px 0 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.secao-sub { font-size: 12px; font-weight: 500; color: var(--text-mid); margin-top: -8px; margin-bottom: 14px; }
+
+/* KPI cards */
+.dash-kpi-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px; margin-bottom: 8px;
+}
+.dash-kpi {
+  background: var(--white); border-radius: var(--card-r);
+  box-shadow: var(--shadow); padding: 20px 22px;
+  border-top: 4px solid var(--blue);
+  position: relative; overflow: hidden;
+}
+.dash-kpi.verde   { border-top-color: var(--green); }
+.dash-kpi.amarelo { border-top-color: var(--yellow); }
+.dash-kpi.roxo    { border-top-color: #6c3fc5; }
+.dash-kpi-label { font-size: 11px; font-weight: 700; color: var(--text-mid); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+.dash-kpi-valor { font-size: 34px; font-weight: 800; color: var(--blue); line-height: 1; }
+.dash-kpi.verde   .dash-kpi-valor { color: var(--green); }
+.dash-kpi.amarelo .dash-kpi-valor { color: #7a5f00; }
+.dash-kpi.roxo    .dash-kpi-valor { color: #6c3fc5; }
+.dash-kpi-pct {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  background: var(--blue-light); color: var(--blue);
+  border-radius: 10px; padding: 2px 8px; margin-top: 6px;
+}
+.dash-kpi.verde   .dash-kpi-pct { background: var(--green-light); color: var(--green); }
+.dash-kpi.amarelo .dash-kpi-pct { background: var(--yellow-light); color: #7a5f00; }
+.dash-kpi.roxo    .dash-kpi-pct { background: #ede7f6; color: #6c3fc5; }
+.dash-kpi-sub { font-size: 11px; color: var(--text-mid); margin-top: 4px; line-height: 1.5; }
+.dash-kpi-bg-ico { position: absolute; right: 14px; bottom: 8px; font-size: 42px; opacity: .07; pointer-events: none; line-height: 1; }
+
+/* Chart cards */
+.dash-chart-card {
+  background: var(--white); border-radius: var(--card-r);
+  box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 20px;
+}
+.dash-chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dash-chart-sub { font-size: 11px; color: var(--text-mid); margin-bottom: 14px; }
+.dash-chart-wrap { position: relative; }
+
+.dash-charts-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .dash-charts-grid { grid-template-columns: 1fr; } }
+
+/* Ranking table */
+.dash-ranking { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.dash-ranking th {
+  font-size: 10px; font-weight: 700; color: var(--text-mid);
+  text-transform: uppercase; letter-spacing: .5px;
+  text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--gray-border);
+}
+.dash-ranking td { padding: 8px 8px; border-bottom: 1px solid var(--gray-border); font-size: 13px; }
+.dash-ranking tr:last-child td { border-bottom: none; }
+.dash-ranking .rank-barra-bg { background: var(--gray-border); border-radius: 4px; height: 8px; }
+.dash-ranking .rank-barra-fill { height: 100%; border-radius: 4px; transition: width .6s; }
+.dash-ranking .rank-val { font-weight: 800; white-space: nowrap; }
+
+/* Mapa */
+#dashMapa { height: 380px; border-radius: 10px; z-index: 1; }
+.dash-mapa-legenda { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; font-size: 11px; color: var(--text-mid); }
+.dash-mapa-legenda-item { display: flex; align-items: center; gap: 5px; }
+.dash-mapa-legenda-cor { width: 16px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.dash-mapa-tooltip { border: none !important; box-shadow: 0 4px 16px rgba(0,0,0,0.14) !important; border-radius: 10px !important; padding: 10px 14px !important; }
+
+/* Farol / badges */
+.farol {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 700;
+}
+.farol-verde   { background: var(--green-light); color: var(--green); }
+.farol-amarelo { background: var(--yellow-light); color: #7a5f00; }
+.farol-vermelho{ background: var(--red-light); color: var(--red); }
+.farol-dot { width: 8px; height: 8px; border-radius: 50%; }
+.farol-verde .farol-dot    { background: var(--green); }
+.farol-amarelo .farol-dot  { background: var(--yellow); }
+.farol-vermelho .farol-dot { background: var(--red); }
+
+/* Buttons */
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 2px solid var(--blue); color: var(--blue); background: transparent;
+  border-radius: var(--radius); padding: 6px 16px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit;
+}
+.btn-outline:hover { background: var(--blue-light); }
+.btn-download {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: var(--radius); padding: 8px 16px;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .2s;
+}
+.btn-download:hover { background: var(--blue-hover); }
+.btn-download.vermelho { background: var(--red); }
+.btn-download.vermelho:hover { background: #c41d06; }
+
+/* Tabela detalhada */
+.tabela-wrap { overflow-x: auto; }
+.tabela-detalhe { width: 100%; border-collapse: collapse; min-width: 760px; }
+.tabela-detalhe th {
+  font-size: 10px; font-weight: 700; color: var(--text-mid);
+  text-transform: uppercase; letter-spacing: .4px;
+  text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--gray-border);
+  position: sticky; top: 0; background: var(--white);
+}
+.tabela-detalhe td { padding: 9px 10px; border-bottom: 1px solid var(--gray-border); font-size: 12.5px; }
+.tabela-detalhe tr:hover td { background: var(--blue-bg); }
+.pill-incremento {
+  display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;
+}
+.pill-incremento.pos { background: var(--green-light); color: var(--green); }
+.pill-incremento.zero { background: #f0f0f5; color: #888; }
+
+/* Estados */
+.vazio { text-align: center; padding: 50px 20px; color: var(--text-mid); }
+.vazio .ico { font-size: 40px; margin-bottom: 12px; }
+.vazio h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.vazio p { font-size: 13px; line-height: 1.6; max-width: 420px; margin: 0 auto; }
+
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(240,240,245,0.92);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; gap: 16px;
+}
+.spinner { width: 40px; height: 40px; border: 4px solid var(--blue-light); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-sm { width: 22px; height: 22px; border: 3px solid var(--blue-light); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 20px auto; }
+
+footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--text-mid); }
+
+@media (max-width: 700px) {
+  .header-inner { padding: 14px 16px; }
+  .filtros { padding: 10px 16px; }
+  .dash-body { padding: 16px 16px 40px; }
+  .dash-kpi-grid { grid-template-columns: 1fr 1fr; }
+  .dash-kpi-valor { font-size: 26px; }
+  #dashMapa { height: 260px; }
+}
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="font-weight:600;color:var(--blue)">Carregando dados...</div>
+</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">🩺 Painel Combo de Equipamentos — APS</div>
+      <div class="header-sub">Monitoramento da entrega de equipamentos aos estabelecimentos de saúde desde a competência de referência</div>
+    </div>
+    <div class="header-att" id="headerAtt"></div>
+  </div>
+  <div class="filtros" id="filtros">
+    <span class="filtros-label">Filtrar:</span>
+    <select id="fCompetencia" onchange="onFiltroChange()"></select>
+    <select id="fUF" onchange="onUfChange()"><option value="">Todas as UFs</option></select>
+    <select id="fMunicipio" onchange="onFiltroChange()"><option value="">Todos os municípios</option></select>
+    <select id="fEquipamento" onchange="onFiltroChange()"><option value="">Todos os equipamentos</option></select>
+    <input type="text" id="fCnes" placeholder="CNES..." inputmode="numeric" oninput="onCnesInput()">
+    <button class="filtros-limpar" id="btnLimpar" onclick="limparFiltros()">✕ Limpar filtros</button>
+  </div>
+</div>
+
+<div class="dash-body" id="dashBody">
+
+  <div class="dash-kpi-grid">
+    <div class="dash-kpi">
+      <div class="dash-kpi-label">CNES monitorados</div>
+      <div class="dash-kpi-valor" id="kpiTotalCnes">—</div>
+      <div class="dash-kpi-sub" id="kpiTotalCnesSub">estabelecimentos acompanhados na competência</div>
+      <div class="dash-kpi-bg-ico">🏥</div>
+    </div>
+    <div class="dash-kpi verde">
+      <div class="dash-kpi-label">CNES com item cadastrado</div>
+      <div class="dash-kpi-valor" id="kpiCnesComItem">—</div>
+      <div class="dash-kpi-pct" id="kpiCnesComItemPct">—%</div>
+      <div class="dash-kpi-sub">já iniciaram o cadastro de ao menos 1 equipamento do combo</div>
+      <div class="dash-kpi-bg-ico">✅</div>
+    </div>
+    <div class="dash-kpi roxo">
+      <div class="dash-kpi-label">Itens do combo cadastrados</div>
+      <div class="dash-kpi-valor" id="kpiItens">—</div>
+      <div class="dash-kpi-sub">unidades registradas acima da linha de base (<span id="kpiBaseline">—</span>)</div>
+      <div class="dash-kpi-bg-ico">📦</div>
+    </div>
+    <div class="dash-kpi amarelo">
+      <div class="dash-kpi-label">Cobertura dos equipamentos</div>
+      <div class="dash-kpi-valor" id="kpiCobertura">—%</div>
+      <div class="dash-kpi-sub" id="kpiCoberturaSub">dos vínculos CNES × equipamento já receberam ao menos 1 unidade</div>
+      <div class="dash-kpi-bg-ico">📊</div>
+    </div>
+  </div>
+
+  <div class="secao-titulo">📈 Panorama — evolução do cadastro</div>
+  <div class="secao-sub">Crescimento dos itens do combo cadastrados e da cobertura, competência a competência, desde a linha de base.</div>
+  <div class="dash-chart-card">
+    <div class="dash-chart-wrap"><canvas id="chartPanorama" height="90"></canvas></div>
+    <div id="panoramaVazio"></div>
+  </div>
+
+  <div class="secao-titulo">🗺️ Distribuição geográfica</div>
+  <div class="dash-chart-card">
+    <div id="dashMapa"></div>
+    <div class="dash-mapa-legenda" id="mapaLegenda"></div>
+  </div>
+
+  <div class="dash-charts-grid">
+    <div class="dash-chart-card">
+      <div class="dash-chart-title">Cobertura por UF</div>
+      <div class="dash-chart-sub">% de vínculos CNES × equipamento com item do combo cadastrado</div>
+      <table class="dash-ranking" id="rankingUF"></table>
+    </div>
+    <div class="dash-chart-card">
+      <div class="dash-chart-title">Cobertura por tipo de equipamento</div>
+      <div class="dash-chart-sub">Quais equipamentos do combo estão mais / menos avançados no cadastro</div>
+      <table class="dash-ranking" id="rankingEquipamento"></table>
+    </div>
+  </div>
+
+  <div class="secao-titulo">🚩 Fila de prioridade de contato</div>
+  <div class="secao-sub">Estabelecimentos sem nenhum item do combo cadastrado na competência selecionada — candidatos a contato ativo.</div>
+  <div class="dash-chart-card">
+    <div class="dash-chart-title">
+      <span id="prioridadeTitulo">—</span>
+      <button class="btn-download vermelho" onclick="baixarPrioridadeCSV()">⬇ Baixar lista completa (CSV)</button>
+    </div>
+    <div class="tabela-wrap">
+      <table class="tabela-detalhe" id="tabelaPrioridade"></table>
+    </div>
+    <div id="prioridadeVazio"></div>
+  </div>
+
+  <div class="secao-titulo">📋 Detalhamento por estabelecimento</div>
+  <div class="secao-sub">Quantidade atual, linha de base e incremento do combo por CNES e equipamento.</div>
+  <div class="dash-chart-card">
+    <div class="dash-chart-title">
+      <span id="detalheTitulo">—</span>
+      <button class="btn-download" onclick="baixarDetalheCSV()">⬇ Baixar CSV (página atual)</button>
+    </div>
+    <div class="tabela-wrap">
+      <table class="tabela-detalhe" id="tabelaDetalhe">
+        <thead>
+          <tr>
+            <th>CNES</th><th>Estabelecimento</th><th>UF</th><th>Município</th>
+            <th>Equipamento</th><th>Baseline</th><th>Atual</th><th>Incremento</th><th>Ativo</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaDetalheBody"></tbody>
+      </table>
+    </div>
+    <div id="detalheVazio"></div>
+    <div style="text-align:center;margin-top:18px" id="carregarMaisWrap"></div>
+  </div>
+
+</div>
+
+<footer>Painel Combo de Equipamentos da APS &copy; 2026</footer>
+
+<script>
+const API_BASE = 'https://darkgoldenrod-pelican-495804.hostingersite.com/sync-combo.php';
+
+let filtroState = { competencia: '', uf: '', municipio: '', equipamento: '', cnes: '' };
+let baselineCompetencia = '';
+let detalheOffset = 0;
+const DETALHE_LIMIT = 50;
+let cnesDebounce = null;
+
+function showLoading(v) { document.getElementById('loadingOverlay').style.display = v ? 'flex' : 'none'; }
+
+function apiUrl(action, params) {
+  const p = new URLSearchParams(params || {});
+  p.set('action', action);
+  return `${API_BASE}?${p.toString()}`;
+}
+
+function filtroParams(extra) {
+  const p = {};
+  if (filtroState.uf) p.uf = filtroState.uf;
+  if (filtroState.municipio) p.municipio = filtroState.municipio;
+  if (filtroState.equipamento) p.equipamento = filtroState.equipamento;
+  if (filtroState.cnes) p.cnes = filtroState.cnes;
+  return Object.assign(p, extra || {});
+}
+
+function fmtNum(n) { return (n || 0).toLocaleString('pt-BR'); }
+
+function fmtCompetencia(c) {
+  if (!c) return '—';
+  const [y, m] = c.split('-');
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return `${meses[parseInt(m,10)-1]}/${y}`;
+}
+
+function corPct(pct) {
+  if (pct >= 70) return { cor: 'var(--green)', farol: 'farol-verde' };
+  if (pct >= 30) return { cor: '#c9a300', farol: 'farol-amarelo' };
+  return { cor: 'var(--red)', farol: 'farol-vermelho' };
+}
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+async function init() {
+  showLoading(true);
+  try {
+    const filtros = await fetch(apiUrl('filtros')).then(r => r.json());
+    baselineCompetencia = filtros.baseline || '';
+
+    const selComp = document.getElementById('fCompetencia');
+    filtros.competencias.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = fmtCompetencia(c);
+      selComp.appendChild(opt);
+    });
+    if (filtros.competencias.length) {
+      filtroState.competencia = filtros.competencias[0];
+      selComp.value = filtroState.competencia;
+    }
+
+    const selUF = document.getElementById('fUF');
+    filtros.ufs.forEach(uf => {
+      const opt = document.createElement('option');
+      opt.value = uf; opt.textContent = uf;
+      selUF.appendChild(opt);
+    });
+
+    const selEq = document.getElementById('fEquipamento');
+    filtros.equipamentos.forEach(eq => {
+      const opt = document.createElement('option');
+      opt.value = eq; opt.textContent = eq.charAt(0) + eq.slice(1).toLowerCase();
+      selEq.appendChild(opt);
+    });
+
+    document.getElementById('headerAtt').textContent =
+      filtros.competencias.length ? `Última competência disponível: ${fmtCompetencia(filtros.competencias[0])}` : '';
+
+    await carregarTudo();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('dashBody').innerHTML = `
+      <div class="vazio"><div class="ico">⚠️</div><h3>Não foi possível carregar os dados</h3>
+      <p>Verifique a conexão com a API ou tente novamente em instantes.</p></div>`;
+  }
+  showLoading(false);
+}
+
+async function onUfChange() {
+  filtroState.uf = document.getElementById('fUF').value;
+  filtroState.municipio = '';
+  const selMun = document.getElementById('fMunicipio');
+  selMun.innerHTML = '<option value="">Todos os municípios</option>';
+  if (filtroState.uf) {
+    const municipios = await fetch(apiUrl('municipios', { uf: filtroState.uf })).then(r => r.json());
+    municipios.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      selMun.appendChild(opt);
+    });
+  }
+  onFiltroChange();
+}
+
+function onCnesInput() {
+  clearTimeout(cnesDebounce);
+  cnesDebounce = setTimeout(() => {
+    filtroState.cnes = document.getElementById('fCnes').value.trim();
+    onFiltroChange();
+  }, 500);
+}
+
+function onFiltroChange() {
+  filtroState.competencia = document.getElementById('fCompetencia').value;
+  filtroState.municipio = document.getElementById('fMunicipio').value;
+  filtroState.equipamento = document.getElementById('fEquipamento').value;
+
+  const ativos = [];
+  if (filtroState.uf) ativos.push(filtroState.uf);
+  if (filtroState.municipio) ativos.push(filtroState.municipio);
+  if (filtroState.equipamento) ativos.push(filtroState.equipamento);
+  if (filtroState.cnes) ativos.push('CNES ' + filtroState.cnes);
+  document.getElementById('btnLimpar').style.display = ativos.length ? 'inline-block' : 'none';
+
+  detalheOffset = 0;
+  carregarTudo();
+}
+
+function limparFiltros() {
+  document.getElementById('fUF').value = '';
+  document.getElementById('fMunicipio').innerHTML = '<option value="">Todos os municípios</option>';
+  document.getElementById('fEquipamento').value = '';
+  document.getElementById('fCnes').value = '';
+  filtroState.uf = ''; filtroState.municipio = ''; filtroState.equipamento = ''; filtroState.cnes = '';
+  document.getElementById('btnLimpar').style.display = 'none';
+  detalheOffset = 0;
+  carregarTudo();
+}
+
+async function carregarTudo() {
+  showLoading(true);
+  detalheOffset = 0;
+  await Promise.all([
+    carregarStats(),
+    carregarEvolucao(),
+    carregarPrioridade(),
+    carregarDetalhe(false),
+  ]);
+  showLoading(false);
+}
+
+// ---------------------------------------------------------------------------
+// KPIs + rankings (por_uf / por_equipamento) + mapa
+// ---------------------------------------------------------------------------
+async function carregarStats() {
+  const stats = await fetch(apiUrl('stats', filtroParams({ competencia: filtroState.competencia }))).then(r => r.json());
+
+  document.getElementById('kpiTotalCnes').textContent = fmtNum(stats.total_cnes);
+  document.getElementById('kpiTotalCnesSub').textContent = `estabelecimentos acompanhados em ${fmtCompetencia(stats.competencia)}`;
+  document.getElementById('kpiCnesComItem').textContent = fmtNum(stats.cnes_com_item);
+  document.getElementById('kpiCnesComItemPct').textContent = stats.pct_cnes_com_item + '%';
+  document.getElementById('kpiItens').textContent = fmtNum(stats.itens_cadastrados);
+  document.getElementById('kpiBaseline').textContent = fmtCompetencia(stats.baseline_competencia);
+  document.getElementById('kpiCobertura').textContent = stats.pct_cadastro + '%';
+  document.getElementById('kpiCoberturaSub').textContent = `${fmtNum(stats.slots_com_item)} de ${fmtNum(stats.slots_totais)} vínculos CNES × equipamento`;
+
+  renderRanking('rankingUF', stats.por_uf, 'uf', 'UF');
+  renderRanking('rankingEquipamento', stats.por_equipamento, 'ds_equipamento', 'Equipamento');
+  await renderMapa(stats.por_uf);
+}
+
+function renderRanking(elId, linhas, chaveLabel, labelCol) {
+  const ordenadas = [...linhas].sort((a, b) => b.pct_cadastro - a.pct_cadastro);
+  let html = `<thead><tr><th>${labelCol}</th><th>Cobertura</th><th>CNES c/ item</th></tr></thead><tbody>`;
+  if (!ordenadas.length) {
+    html += `<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">Sem dados para os filtros atuais</td></tr>`;
+  }
+  ordenadas.forEach(l => {
+    const { cor } = corPct(l.pct_cadastro);
+    const nome = chaveLabel === 'ds_equipamento'
+      ? (l[chaveLabel].charAt(0) + l[chaveLabel].slice(1).toLowerCase())
+      : l[chaveLabel];
+    html += `<tr>
+      <td>${nome}</td>
+      <td style="min-width:140px">
+        <div class="rank-barra-bg"><div class="rank-barra-fill" style="width:${l.pct_cadastro}%;background:${cor}"></div></div>
+        <span class="rank-val" style="color:${cor}">${l.pct_cadastro}%</span>
+      </td>
+      <td>${fmtNum(l.cnes_com_item)} / ${fmtNum(l.total_cnes)}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById(elId).innerHTML = html;
+}
+
+let _leafletLoaded = false;
+function carregarLeaflet(cb) {
+  if (_leafletLoaded && window.L) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  s.crossOrigin = '';
+  s.onload = () => { _leafletLoaded = true; cb(); };
+  document.head.appendChild(s);
+}
+
+let _mapaInst = null;
+let _mapaLayers = [];
+const UF_COORDS = {
+  AC:[-9.0,-70.8],AL:[-9.6,-36.6],AP:[1.4,-51.8],AM:[-4.1,-64.8],BA:[-12.6,-41.7],CE:[-5.2,-39.5],
+  DF:[-15.8,-47.9],ES:[-19.7,-40.5],GO:[-15.9,-49.8],MA:[-5.4,-45.4],MT:[-12.9,-55.5],MS:[-20.7,-54.7],
+  MG:[-18.6,-44.2],PA:[-3.9,-52.5],PB:[-7.2,-36.7],PR:[-24.7,-51.5],PE:[-8.5,-37.9],PI:[-7.2,-42.7],
+  RJ:[-22.2,-42.6],RN:[-5.8,-36.6],RS:[-30.0,-53.4],RO:[-10.9,-62.8],RR:[2.0,-61.4],SC:[-27.3,-50.2],
+  SP:[-22.2,-48.6],SE:[-10.6,-37.3],TO:[-10.2,-48.3]
+};
+
+async function renderMapa(porUF) {
+  carregarLeaflet(() => {
+    if (!_mapaInst) {
+      _mapaInst = L.map('dashMapa', { center: [-14.5,-51.9], zoom: 4, zoomControl: true, attributionControl: false, scrollWheelZoom: false });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(_mapaInst);
+    }
+    _mapaLayers.forEach(l => _mapaInst.removeLayer(l));
+    _mapaLayers = [];
+
+    porUF.forEach(l => {
+      const coords = UF_COORDS[l.uf];
+      if (!coords) return;
+      const { cor } = corPct(l.pct_cadastro);
+      const raio = 6 + Math.sqrt(l.total_cnes) * 1.4;
+      const marker = L.circleMarker(coords, {
+        radius: raio, fillColor: cor, color: '#fff', weight: 1.5, fillOpacity: 0.85
+      }).addTo(_mapaInst);
+      marker.bindTooltip(
+        `<b>${l.uf}</b><br>Cobertura: ${l.pct_cadastro}%<br>${fmtNum(l.cnes_com_item)} de ${fmtNum(l.total_cnes)} CNES com item`,
+        { className: 'dash-mapa-tooltip' }
+      );
+      _mapaLayers.push(marker);
+    });
+
+    setTimeout(() => _mapaInst.invalidateSize(), 200);
+  });
+
+  document.getElementById('mapaLegenda').innerHTML = `
+    <div class="dash-mapa-legenda-item"><div class="dash-mapa-legenda-cor" style="background:var(--red)"></div>Cobertura baixa (&lt;30%)</div>
+    <div class="dash-mapa-legenda-item"><div class="dash-mapa-legenda-cor" style="background:#c9a300"></div>Cobertura parcial (30–69%)</div>
+    <div class="dash-mapa-legenda-item"><div class="dash-mapa-legenda-cor" style="background:var(--green)"></div>Cobertura alta (≥70%)</div>
+    <div class="dash-mapa-legenda-item" style="margin-left:auto">Tamanho do círculo = nº de CNES na UF</div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Panorama (evolução por competência)
+// ---------------------------------------------------------------------------
+let _chartJsLoaded = false;
+function carregarChartJs(cb) {
+  if (_chartJsLoaded) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
+  s.onload = () => { _chartJsLoaded = true; cb(); };
+  document.head.appendChild(s);
+}
+
+let _chartPanorama = null;
+async function carregarEvolucao() {
+  const dados = await fetch(apiUrl('evolucao', filtroParams())).then(r => r.json());
+  if (!dados.length) {
+    document.getElementById('panoramaVazio').innerHTML = `<div class="vazio"><div class="ico">📉</div><h3>Sem dados</h3><p>Nenhum registro para os filtros atuais.</p></div>`;
+    return;
+  }
+  document.getElementById('panoramaVazio').innerHTML = '';
+
+  carregarChartJs(() => {
+    const labels = dados.map(d => fmtCompetencia(d.competencia));
+    const itens = dados.map(d => d.itens_cadastrados);
+    const cobertura = dados.map(d => d.pct_cadastro);
+
+    const ctx = document.getElementById('chartPanorama').getContext('2d');
+    if (_chartPanorama) _chartPanorama.destroy();
+
+    const gradiente = ctx.createLinearGradient(0, 0, 0, 300);
+    gradiente.addColorStop(0, 'rgba(19,81,180,0.35)');
+    gradiente.addColorStop(1, 'rgba(19,81,180,0.02)');
+
+    _chartPanorama = new Chart(ctx, {
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar', label: 'Itens do combo cadastrados (unidades)',
+            data: itens, backgroundColor: gradiente, borderColor: '#1351B4', borderWidth: 1.5,
+            borderRadius: 6, yAxisID: 'y', order: 2,
+          },
+          {
+            type: 'line', label: 'Cobertura de equipamentos (%)',
+            data: cobertura, borderColor: '#168821', backgroundColor: '#168821',
+            borderWidth: 3, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#168821',
+            yAxisID: 'y1', order: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Raleway', weight: '600' }, boxWidth: 14, padding: 16 } },
+          tooltip: { backgroundColor: '#1C1C1C', padding: 10, cornerRadius: 8, titleFont: { family: 'Raleway' }, bodyFont: { family: 'Raleway' } },
+        },
+        scales: {
+          y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Itens cadastrados' }, grid: { color: '#f0f0f5' } },
+          y1: { position: 'right', beginAtZero: true, max: 100, title: { display: true, text: 'Cobertura (%)' }, grid: { drawOnChartArea: false } },
+          x: { grid: { display: false } },
+        },
+      },
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Fila de prioridade
+// ---------------------------------------------------------------------------
+async function carregarPrioridade() {
+  const dados = await fetch(apiUrl('prioridade', filtroParams({ competencia: filtroState.competencia }))).then(r => r.json());
+  document.getElementById('prioridadeTitulo').textContent =
+    `${fmtNum(dados.total)} estabelecimento(s) sem nenhum item cadastrado em ${fmtCompetencia(dados.competencia)}`;
+
+  const tbl = document.getElementById('tabelaPrioridade');
+  const vazioEl = document.getElementById('prioridadeVazio');
+  if (!dados.lista.length) {
+    tbl.innerHTML = '';
+    vazioEl.innerHTML = `<div class="vazio"><div class="ico">🎉</div><h3>Nenhum estabelecimento pendente</h3><p>Todos os CNES nos filtros atuais já têm ao menos 1 item do combo cadastrado.</p></div>`;
+    return;
+  }
+  vazioEl.innerHTML = '';
+
+  const amostra = dados.lista.slice(0, 30);
+  let html = '<thead><tr><th>CNES</th><th>Estabelecimento</th><th>UF</th><th>Município</th></tr></thead><tbody>';
+  amostra.forEach(r => {
+    html += `<tr><td>${r.cnes}</td><td>${r.nome_fantasia}</td><td>${r.uf}</td><td>${r.municipio}</td></tr>`;
+  });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+
+  if (dados.lista.length > amostra.length) {
+    vazioEl.innerHTML = `<div style="text-align:center;padding:14px;font-size:12px;color:var(--text-mid)">
+      Mostrando ${amostra.length} de ${fmtNum(dados.lista.length)} — baixe o CSV completo para ver todos.</div>`;
+  }
+
+  window._prioridadeCompleta = dados.lista;
+}
+
+function baixarPrioridadeCSV() {
+  const lista = window._prioridadeCompleta || [];
+  if (!lista.length) return;
+  const headers = ['CNES', 'Estabelecimento', 'UF', 'Município'];
+  const rows = lista.map(r => [r.cnes, r.nome_fantasia, r.uf, r.municipio]);
+  downloadCSV('fila_prioridade_combo', headers, rows);
+}
+
+// ---------------------------------------------------------------------------
+// Tabela detalhada (paginada)
+// ---------------------------------------------------------------------------
+async function carregarDetalhe(acumular) {
+  const params = filtroParams({ competencia: filtroState.competencia, limit: DETALHE_LIMIT, offset: detalheOffset });
+  const dados = await fetch(apiUrl('data', params)).then(r => r.json());
+
+  document.getElementById('detalheTitulo').textContent = `Registros em ${fmtCompetencia(dados.competencia)}`;
+
+  const body = document.getElementById('tabelaDetalheBody');
+  if (!acumular) body.innerHTML = '';
+
+  const vazioEl = document.getElementById('detalheVazio');
+  if (!dados.registros.length && detalheOffset === 0) {
+    vazioEl.innerHTML = `<div class="vazio"><div class="ico">🔍</div><h3>Nenhum registro encontrado</h3><p>Ajuste os filtros para ver o detalhamento por estabelecimento.</p></div>`;
+    document.getElementById('carregarMaisWrap').innerHTML = '';
+    return;
+  }
+  vazioEl.innerHTML = '';
+
+  dados.registros.forEach(r => {
+    const nomeEq = r.ds_equipamento.charAt(0) + r.ds_equipamento.slice(1).toLowerCase();
+    const pillClass = r.incremento_combo > 0 ? 'pos' : 'zero';
+    body.innerHTML += `<tr>
+      <td>${r.cnes}</td><td>${r.nome_fantasia}</td><td>${r.uf}</td><td>${r.municipio}</td>
+      <td>${nomeEq}</td><td>${fmtNum(r.quantidade_baseline)}</td><td>${fmtNum(r.quantidade)}</td>
+      <td><span class="pill-incremento ${pillClass}">${r.incremento_combo > 0 ? '+' : ''}${r.incremento_combo}</span></td>
+      <td>${r.ativo === 'SIM' ? '✅' : '—'}</td>
+    </tr>`;
+  });
+
+  window._detalheAcumulado = acumular ? (window._detalheAcumulado || []).concat(dados.registros) : dados.registros;
+
+  const wrap = document.getElementById('carregarMaisWrap');
+  wrap.innerHTML = dados.tem_mais
+    ? `<button class="btn-outline" style="padding:10px 28px;font-size:13px" onclick="carregarMaisDetalhe()">Carregar mais registros</button>`
+    : '';
+}
+
+function carregarMaisDetalhe() {
+  detalheOffset += DETALHE_LIMIT;
+  carregarDetalhe(true);
+}
+
+function baixarDetalheCSV() {
+  const lista = window._detalheAcumulado || [];
+  if (!lista.length) return;
+  const headers = ['CNES', 'Estabelecimento', 'UF', 'Município', 'Equipamento', 'Baseline', 'Atual', 'Incremento combo', 'Ativo'];
+  const rows = lista.map(r => [r.cnes, r.nome_fantasia, r.uf, r.municipio, r.ds_equipamento, r.quantidade_baseline, r.quantidade, r.incremento_combo, r.ativo]);
+  downloadCSV('detalhamento_combo', headers, rows);
+}
+
+function downloadCSV(nomeBase, headers, rows) {
+  const csv = [headers, ...rows]
+    .map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `${nomeBase}_${filtroState.competencia || 'geral'}.csv`;
+  a.click();
+}
+
+init();
+</script>
+</body>
+</html>
