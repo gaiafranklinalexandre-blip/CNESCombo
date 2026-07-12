@@ -3,6 +3,7 @@
 > Leia este arquivo antes de qualquer mudança relevante no projeto.
 > Nome do painel: **CNES Combo**. Projeto irmão: **Painel Credenciamento** (`gaiafranklinalexandre-blip/Credenciamentos`) — mesma arquitetura, reaproveitada aqui.
 > Fonte do painel: **Inter** (não Raleway — trocada por legibilidade a pedido do usuário).
+> **Push automático autorizado**: usuário pediu para não perguntar antes de dar `git push origin main` neste repositório — commitar e enviar direto após mudanças em `index.html`/`sync_combo.py`/`CLAUDE.md` (o Render faz deploy automático). Continua valendo pedir confirmação para operações destrutivas (force-push, reset, etc.).
 
 ---
 
@@ -87,7 +88,6 @@ O painel **não é um espelho da base** — ele precisa calcular quantos equipam
 - **Itens do combo cadastrados** (volume): `SUM(incremento_combo)` — quantas unidades a mais foram registradas desde a baseline.
 - **Cobertura (% de cadastro dos equipamentos)**: proporção de slots `(cnes × equipamento)` com `incremento_combo > 0` sobre o total de slots — mede quantos dos "espaços esperados" já receberam pelo menos 1 unidade do combo. Não confundir com o volume: um CNES pode ter `incremento_combo = 5` num único equipamento e isso conta como 1 slot coberto. Usada nos rankings por UF e por equipamento.
 - **CNES com pelo menos 1 item do combo**: `COUNT(DISTINCT cnes)` onde algum equipamento daquele CNES tem `incremento_combo > 0` na competência.
-- **Lista de prioridade de contato**: CNES onde `SUM(incremento_combo) = 0` em todos os equipamentos na competência mais recente — candidatos a contato ativo, pois ainda não começaram a cadastrar nenhum item do combo. Exportável em CSV com UF/município para facilitar a ação.
 - **Panorama (gráfico de evolução)**: série temporal de `itens_cadastrados` por competência, comparada à meta de entrega (ver regra abaixo) — mostra o crescimento do cadastro ao longo do tempo desde a baseline.
 
 ---

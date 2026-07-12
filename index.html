@@ -254,7 +254,7 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
   <div class="header-inner">
     <div>
       <div class="header-title">CNES Combo</div>
-      <div class="header-sub">Monitoramento do Combo de Equipamentos da APS — entrega aos estabelecimentos de saúde</div>
+      <div class="header-sub">Monitoramento de cadastros de equipamentos no CNES</div>
     </div>
     <div class="header-att" id="headerAtt"></div>
   </div>
@@ -265,7 +265,7 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
       <select id="fUF" onchange="onUfChange()"><option value="">Todas as UFs</option></select>
       <div class="busca-wrap">
         <input type="text" id="fMunicipio" placeholder="Buscar município..." autocomplete="off"
-          oninput="onMunicipioInput()" onfocus="onMunicipioInput()">
+          oninput="onMunicipioInput()" onfocus="onMunicipioInput()" onkeydown="onMunicipioKey(event)">
         <div class="sugestoes" id="municipioSugestoes" style="display:none"></div>
       </div>
       <select id="fEquipamento" onchange="onEquipamentoChange()"><option value="">Todos os equipamentos</option></select>
@@ -333,18 +333,6 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
     </div>
   </div>
 
-  <div class="secao-titulo">🚩 Fila de prioridade de contato</div>
-  <div class="secao-sub">Estabelecimentos sem nenhum item do combo cadastrado na competência selecionada — candidatos a contato ativo.</div>
-  <div class="dash-chart-card">
-    <div class="dash-chart-title">
-      <span id="prioridadeTitulo">—</span>
-      <button class="btn-download vermelho" onclick="baixarPrioridadeCSV()">⬇ Baixar lista completa (CSV)</button>
-    </div>
-    <div class="tabela-wrap">
-      <table class="tabela-detalhe" id="tabelaPrioridade"></table>
-    </div>
-    <div id="prioridadeVazio"></div>
-  </div>
 
   <div class="secao-titulo">📋 Detalhamento por estabelecimento</div>
   <div class="secao-sub">Quantidade atual, linha de base e incremento do combo por CNES e equipamento.</div>
@@ -504,18 +492,32 @@ function onMunicipioInput() {
     return;
   }
 
+  // data-attributes em vez de onclick inline com string interpolada — evita quebrar
+  // com nomes que têm apóstrofo (ex: "Sant'Ana do Livramento") ou aspas.
   box.innerHTML = matches.map(m => {
     const nome = m.municipio;
     const idx = normalizar(nome).indexOf(termo);
     const destaque = idx >= 0
       ? nome.slice(0, idx) + '<strong>' + nome.slice(idx, idx + termo.length) + '</strong>' + nome.slice(idx + termo.length)
       : nome;
-    const nomeAttr = nome.replace(/"/g, '&quot;');
-    return `<div class="sug-item" onclick='selecionarMunicipio("${nomeAttr}","${m.uf}")'>
+    const nomeAttr = escapeAttr(nome);
+    return `<div class="sug-item" data-nome="${nomeAttr}" data-uf="${m.uf}">
       <span class="sug-nome">${destaque}</span><span class="sug-uf">${m.uf}</span>
     </div>`;
   }).join('');
   box.style.display = 'block';
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function onMunicipioKey(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const box = document.getElementById('municipioSugestoes');
+  const first = box.querySelector('.sug-item[data-nome]');
+  if (first) selecionarMunicipio(first.dataset.nome, first.dataset.uf);
 }
 
 function selecionarMunicipio(nome, uf) {
@@ -528,6 +530,11 @@ function selecionarMunicipio(nome, uf) {
 }
 
 document.addEventListener('click', (e) => {
+  const item = e.target.closest('.sug-item[data-nome]');
+  if (item) {
+    selecionarMunicipio(item.dataset.nome, item.dataset.uf);
+    return;
+  }
   if (!e.target.closest('.busca-wrap')) {
     const box = document.getElementById('municipioSugestoes');
     if (box) box.style.display = 'none';
@@ -582,7 +589,6 @@ async function carregarTudo() {
   await Promise.all([
     carregarStats(),
     carregarEvolucao(),
-    carregarPrioridade(),
     carregarDetalhe(false),
   ]);
   showLoading(false);
@@ -762,47 +768,6 @@ async function carregarEvolucao() {
       },
     });
   });
-}
-
-// ---------------------------------------------------------------------------
-// Fila de prioridade
-// ---------------------------------------------------------------------------
-async function carregarPrioridade() {
-  const dados = await fetch(apiUrl('prioridade', filtroParams({ competencia: filtroState.competencia }))).then(r => r.json());
-  document.getElementById('prioridadeTitulo').textContent =
-    `${fmtNum(dados.total)} estabelecimento(s) sem nenhum item cadastrado em ${fmtCompetencia(dados.competencia)}`;
-
-  const tbl = document.getElementById('tabelaPrioridade');
-  const vazioEl = document.getElementById('prioridadeVazio');
-  if (!dados.lista.length) {
-    tbl.innerHTML = '';
-    vazioEl.innerHTML = `<div class="vazio"><div class="ico">🎉</div><h3>Nenhum estabelecimento pendente</h3><p>Todos os CNES nos filtros atuais já têm ao menos 1 item do combo cadastrado.</p></div>`;
-    return;
-  }
-  vazioEl.innerHTML = '';
-
-  const amostra = dados.lista.slice(0, 30);
-  let html = '<thead><tr><th>CNES</th><th>Estabelecimento</th><th>UF</th><th>Município</th></tr></thead><tbody>';
-  amostra.forEach(r => {
-    html += `<tr><td>${r.cnes}</td><td>${r.nome_fantasia}</td><td>${r.uf}</td><td>${r.municipio}</td></tr>`;
-  });
-  html += '</tbody>';
-  tbl.innerHTML = html;
-
-  if (dados.lista.length > amostra.length) {
-    vazioEl.innerHTML = `<div style="text-align:center;padding:14px;font-size:12px;color:var(--text-mid)">
-      Mostrando ${amostra.length} de ${fmtNum(dados.lista.length)} — baixe o CSV completo para ver todos.</div>`;
-  }
-
-  window._prioridadeCompleta = dados.lista;
-}
-
-function baixarPrioridadeCSV() {
-  const lista = window._prioridadeCompleta || [];
-  if (!lista.length) return;
-  const headers = ['CNES', 'Estabelecimento', 'UF', 'Município'];
-  const rows = lista.map(r => [r.cnes, r.nome_fantasia, r.uf, r.municipio]);
-  downloadCSV('fila_prioridade_combo', headers, rows);
 }
 
 // ---------------------------------------------------------------------------
