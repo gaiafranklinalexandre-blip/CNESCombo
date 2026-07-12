@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Combo de Equipamentos — APS</title>
+<title>CNES Combo</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   --blue:        #1351B4;
@@ -28,7 +28,7 @@
   --shadow:      0 2px 12px rgba(0,0,0,0.07);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Raleway', sans-serif; background: var(--gray-bg); color: var(--text); font-size: 14px; }
+body { font-family: 'Inter', sans-serif; background: var(--gray-bg); color: var(--text); font-size: 14px; }
 
 /* Header */
 .header {
@@ -46,7 +46,11 @@ body { font-family: 'Raleway', sans-serif; background: var(--gray-bg); color: va
 /* Filtros */
 .filtros {
   background: var(--gray-bg); border-bottom: 1px solid var(--gray-border);
-  padding: 10px 28px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 28px;
+}
+.filtros-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
 .filtros-label {
   font-size: 11px; font-weight: 700; color: var(--text-mid);
@@ -62,7 +66,7 @@ body { font-family: 'Raleway', sans-serif; background: var(--gray-bg); color: va
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'%3E%3Cpath fill='%231351B4' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 8px center;
 }
-.filtros input[type=text] { cursor: text; padding: 7px 12px; width: 110px; }
+.filtros input[type=text] { cursor: text; padding: 7px 12px; }
 .filtros select:focus, .filtros input:focus { outline: 2px solid var(--blue); }
 .filtros-limpar {
   font-size: 12px; color: var(--blue); font-weight: 600; font-family: inherit;
@@ -71,6 +75,27 @@ body { font-family: 'Raleway', sans-serif; background: var(--gray-bg); color: va
 }
 .filtros-limpar:hover { background: var(--blue-bg); }
 .filtros-ativas { font-size: 11px; color: var(--blue); font-weight: 700; }
+#fCnes { width: 110px; }
+
+/* Busca de município (autocomplete) */
+.busca-wrap { position: relative; }
+#fMunicipio { width: 180px; }
+.sugestoes {
+  position: absolute; background: var(--white); border: 1px solid var(--gray-border);
+  border-radius: 10px; box-shadow: var(--shadow); max-height: 280px; overflow-y: auto;
+  z-index: 200; width: 280px; top: calc(100% + 4px); left: 0;
+}
+.sug-item {
+  padding: 9px 14px; cursor: pointer; font-size: 12.5px;
+  border-bottom: 1px solid var(--gray-border);
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.sug-item:last-child { border-bottom: none; }
+.sug-item:hover { background: var(--blue-bg); }
+.sug-nome { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sug-nome strong { color: var(--blue); font-weight: 700; }
+.sug-uf { font-size: 10px; color: var(--text-mid); background: var(--gray-bg); padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+.sug-vazio { padding: 12px 14px; font-size: 12.5px; color: var(--text-mid); cursor: default; }
 
 /* Body / layout */
 .dash-body { max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px; }
@@ -228,19 +253,25 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
 <div class="header">
   <div class="header-inner">
     <div>
-      <div class="header-title">🩺 Painel Combo de Equipamentos — APS</div>
-      <div class="header-sub">Monitoramento da entrega de equipamentos aos estabelecimentos de saúde desde a competência de referência</div>
+      <div class="header-title">CNES Combo</div>
+      <div class="header-sub">Monitoramento do Combo de Equipamentos da APS — entrega aos estabelecimentos de saúde</div>
     </div>
     <div class="header-att" id="headerAtt"></div>
   </div>
   <div class="filtros" id="filtros">
-    <span class="filtros-label">Filtrar:</span>
-    <select id="fCompetencia" onchange="onFiltroChange()"></select>
-    <select id="fUF" onchange="onUfChange()"><option value="">Todas as UFs</option></select>
-    <select id="fMunicipio" onchange="onFiltroChange()"><option value="">Todos os municípios</option></select>
-    <select id="fEquipamento" onchange="onFiltroChange()"><option value="">Todos os equipamentos</option></select>
-    <input type="text" id="fCnes" placeholder="CNES..." inputmode="numeric" oninput="onCnesInput()">
-    <button class="filtros-limpar" id="btnLimpar" onclick="limparFiltros()">✕ Limpar filtros</button>
+    <div class="filtros-inner">
+      <span class="filtros-label">Filtrar:</span>
+      <select id="fCompetencia" onchange="onFiltroChange()"></select>
+      <select id="fUF" onchange="onUfChange()"><option value="">Todas as UFs</option></select>
+      <div class="busca-wrap">
+        <input type="text" id="fMunicipio" placeholder="Buscar município..." autocomplete="off"
+          oninput="onMunicipioInput()" onfocus="onMunicipioInput()">
+        <div class="sugestoes" id="municipioSugestoes" style="display:none"></div>
+      </div>
+      <select id="fEquipamento" onchange="onEquipamentoChange()"><option value="">Todos os equipamentos</option></select>
+      <input type="text" id="fCnes" placeholder="CNES..." inputmode="numeric" oninput="onCnesInput()">
+      <button class="filtros-limpar" id="btnLimpar" onclick="limparFiltros()">✕ Limpar filtros</button>
+    </div>
   </div>
 </div>
 
@@ -267,24 +298,26 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
       <div class="dash-kpi-bg-ico">📦</div>
     </div>
     <div class="dash-kpi amarelo">
-      <div class="dash-kpi-label">Cobertura dos equipamentos</div>
+      <div class="dash-kpi-label">Progresso da meta de entrega</div>
       <div class="dash-kpi-valor" id="kpiCobertura">—%</div>
-      <div class="dash-kpi-sub" id="kpiCoberturaSub">dos vínculos CNES × equipamento já receberam ao menos 1 unidade</div>
+      <div class="dash-kpi-sub" id="kpiCoberturaSub">itens cadastrados sobre a meta nacional (10.000 por equipamento)</div>
       <div class="dash-kpi-bg-ico">📊</div>
     </div>
   </div>
 
   <div class="secao-titulo">📈 Panorama — evolução do cadastro</div>
-  <div class="secao-sub">Crescimento dos itens do combo cadastrados e da cobertura, competência a competência, desde a linha de base.</div>
+  <div class="secao-sub">Itens do combo cadastrados a cada competência frente à meta de entrega (10.000 unidades por tipo de equipamento). A meta é nacional e não é recalculada ao filtrar por UF/município.</div>
   <div class="dash-chart-card">
     <div class="dash-chart-wrap"><canvas id="chartPanorama" height="90"></canvas></div>
     <div id="panoramaVazio"></div>
   </div>
 
   <div class="secao-titulo">🗺️ Distribuição geográfica</div>
+  <div class="secao-sub">Somente UFs com pelo menos 1 unidade com item do combo cadastrado.</div>
   <div class="dash-chart-card">
     <div id="dashMapa"></div>
     <div class="dash-mapa-legenda" id="mapaLegenda"></div>
+    <div id="mapaVazio"></div>
   </div>
 
   <div class="dash-charts-grid">
@@ -318,6 +351,9 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
   <div class="dash-chart-card">
     <div class="dash-chart-title">
       <span id="detalheTitulo">—</span>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-mid);cursor:pointer">
+        <input type="checkbox" id="fApenasComItem" onchange="onFiltroChange()"> Somente unidades com item cadastrado
+      </label>
       <button class="btn-download" onclick="baixarDetalheCSV()">⬇ Baixar CSV (página atual)</button>
     </div>
     <div class="tabela-wrap">
@@ -337,16 +373,32 @@ footer { text-align: center; padding: 30px 20px; font-size: 11px; color: var(--t
 
 </div>
 
-<footer>Painel Combo de Equipamentos da APS &copy; 2026</footer>
+<footer>CNES Combo &copy; 2026</footer>
 
 <script>
 const API_BASE = 'https://darkgoldenrod-pelican-495804.hostingersite.com/sync-combo.php';
+const TARGET_POR_EQUIPAMENTO = 10000; // meta nacional de entrega, por tipo de equipamento
 
 let filtroState = { competencia: '', uf: '', municipio: '', equipamento: '', cnes: '' };
 let baselineCompetencia = '';
+let totalEquipamentos = 0;
+let allMunicipios = []; // [{municipio, uf}]
 let detalheOffset = 0;
 const DETALHE_LIMIT = 50;
 let cnesDebounce = null;
+
+function metaTotal() {
+  const n = filtroState.equipamento ? 1 : (totalEquipamentos || 1);
+  return TARGET_POR_EQUIPAMENTO * n;
+}
+
+function normalizar(s) {
+  const semAcento = (s || '').toLowerCase().normalize('NFD').split('').filter(function (c) {
+    const code = c.codePointAt(0);
+    return code < 0x0300 || code > 0x036f; // remove marcas de acentuação combinadas
+  }).join('');
+  return semAcento;
+}
 
 function showLoading(v) { document.getElementById('loadingOverlay').style.display = v ? 'flex' : 'none'; }
 
@@ -413,6 +465,9 @@ async function init() {
       opt.value = eq; opt.textContent = eq.charAt(0) + eq.slice(1).toLowerCase();
       selEq.appendChild(opt);
     });
+    totalEquipamentos = filtros.equipamentos.length;
+
+    allMunicipios = await fetch(apiUrl('municipios')).then(r => r.json());
 
     document.getElementById('headerAtt').textContent =
       filtros.competencias.length ? `Última competência disponível: ${fmtCompetencia(filtros.competencias[0])}` : '';
@@ -427,19 +482,62 @@ async function init() {
   showLoading(false);
 }
 
-async function onUfChange() {
+function onUfChange() {
   filtroState.uf = document.getElementById('fUF').value;
   filtroState.municipio = '';
-  const selMun = document.getElementById('fMunicipio');
-  selMun.innerHTML = '<option value="">Todos os municípios</option>';
-  if (filtroState.uf) {
-    const municipios = await fetch(apiUrl('municipios', { uf: filtroState.uf })).then(r => r.json());
-    municipios.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m; opt.textContent = m;
-      selMun.appendChild(opt);
-    });
+  document.getElementById('fMunicipio').value = '';
+  onFiltroChange();
+}
+
+function onMunicipioInput() {
+  const termo = normalizar(document.getElementById('fMunicipio').value.trim());
+  const box = document.getElementById('municipioSugestoes');
+  if (!termo) { box.style.display = 'none'; box.innerHTML = ''; return; }
+
+  let candidatos = allMunicipios;
+  if (filtroState.uf) candidatos = candidatos.filter(m => m.uf === filtroState.uf);
+  const matches = candidatos.filter(m => normalizar(m.municipio).includes(termo)).slice(0, 15);
+
+  if (!matches.length) {
+    box.innerHTML = '<div class="sug-vazio">Nenhum município encontrado</div>';
+    box.style.display = 'block';
+    return;
   }
+
+  box.innerHTML = matches.map(m => {
+    const nome = m.municipio;
+    const idx = normalizar(nome).indexOf(termo);
+    const destaque = idx >= 0
+      ? nome.slice(0, idx) + '<strong>' + nome.slice(idx, idx + termo.length) + '</strong>' + nome.slice(idx + termo.length)
+      : nome;
+    const nomeAttr = nome.replace(/"/g, '&quot;');
+    return `<div class="sug-item" onclick='selecionarMunicipio("${nomeAttr}","${m.uf}")'>
+      <span class="sug-nome">${destaque}</span><span class="sug-uf">${m.uf}</span>
+    </div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function selecionarMunicipio(nome, uf) {
+  document.getElementById('fMunicipio').value = nome;
+  document.getElementById('municipioSugestoes').style.display = 'none';
+  document.getElementById('fUF').value = uf;
+  filtroState.uf = uf;
+  filtroState.municipio = nome;
+  onFiltroChange();
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.busca-wrap')) {
+    const box = document.getElementById('municipioSugestoes');
+    if (box) box.style.display = 'none';
+  }
+});
+
+function onEquipamentoChange() {
+  filtroState.equipamento = document.getElementById('fEquipamento').value;
+  // Ao escolher um equipamento específico, já mostra só as unidades que o têm cadastrado
+  document.getElementById('fApenasComItem').checked = !!filtroState.equipamento;
   onFiltroChange();
 }
 
@@ -453,7 +551,6 @@ function onCnesInput() {
 
 function onFiltroChange() {
   filtroState.competencia = document.getElementById('fCompetencia').value;
-  filtroState.municipio = document.getElementById('fMunicipio').value;
   filtroState.equipamento = document.getElementById('fEquipamento').value;
 
   const ativos = [];
@@ -469,9 +566,10 @@ function onFiltroChange() {
 
 function limparFiltros() {
   document.getElementById('fUF').value = '';
-  document.getElementById('fMunicipio').innerHTML = '<option value="">Todos os municípios</option>';
+  document.getElementById('fMunicipio').value = '';
   document.getElementById('fEquipamento').value = '';
   document.getElementById('fCnes').value = '';
+  document.getElementById('fApenasComItem').checked = false;
   filtroState.uf = ''; filtroState.municipio = ''; filtroState.equipamento = ''; filtroState.cnes = '';
   document.getElementById('btnLimpar').style.display = 'none';
   detalheOffset = 0;
@@ -502,8 +600,11 @@ async function carregarStats() {
   document.getElementById('kpiCnesComItemPct').textContent = stats.pct_cnes_com_item + '%';
   document.getElementById('kpiItens').textContent = fmtNum(stats.itens_cadastrados);
   document.getElementById('kpiBaseline').textContent = fmtCompetencia(stats.baseline_competencia);
-  document.getElementById('kpiCobertura').textContent = stats.pct_cadastro + '%';
-  document.getElementById('kpiCoberturaSub').textContent = `${fmtNum(stats.slots_com_item)} de ${fmtNum(stats.slots_totais)} vínculos CNES × equipamento`;
+
+  const meta = metaTotal();
+  const pctMeta = meta > 0 ? Math.min(100, Math.round(1000 * stats.itens_cadastrados / meta) / 10) : 0;
+  document.getElementById('kpiCobertura').textContent = pctMeta + '%';
+  document.getElementById('kpiCoberturaSub').textContent = `${fmtNum(stats.itens_cadastrados)} de ${fmtNum(meta)} esperados`;
 
   renderRanking('rankingUF', stats.por_uf, 'uf', 'UF');
   renderRanking('rankingEquipamento', stats.por_equipamento, 'ds_equipamento', 'Equipamento');
@@ -555,6 +656,9 @@ const UF_COORDS = {
 };
 
 async function renderMapa(porUF) {
+  // Dinâmico: só entram no mapa as UFs que já têm algum item do combo cadastrado
+  const comCadastro = porUF.filter(l => l.itens_cadastrados > 0);
+
   carregarLeaflet(() => {
     if (!_mapaInst) {
       _mapaInst = L.map('dashMapa', { center: [-14.5,-51.9], zoom: 4, zoomControl: true, attributionControl: false, scrollWheelZoom: false });
@@ -563,16 +667,17 @@ async function renderMapa(porUF) {
     _mapaLayers.forEach(l => _mapaInst.removeLayer(l));
     _mapaLayers = [];
 
-    porUF.forEach(l => {
+    const maxItens = Math.max(1, ...comCadastro.map(l => l.itens_cadastrados));
+    comCadastro.forEach(l => {
       const coords = UF_COORDS[l.uf];
       if (!coords) return;
       const { cor } = corPct(l.pct_cadastro);
-      const raio = 6 + Math.sqrt(l.total_cnes) * 1.4;
+      const raio = 6 + Math.sqrt(l.itens_cadastrados / maxItens) * 24;
       const marker = L.circleMarker(coords, {
         radius: raio, fillColor: cor, color: '#fff', weight: 1.5, fillOpacity: 0.85
       }).addTo(_mapaInst);
       marker.bindTooltip(
-        `<b>${l.uf}</b><br>Cobertura: ${l.pct_cadastro}%<br>${fmtNum(l.cnes_com_item)} de ${fmtNum(l.total_cnes)} CNES com item`,
+        `<b>${l.uf}</b><br>${fmtNum(l.itens_cadastrados)} itens cadastrados<br>${fmtNum(l.cnes_com_item)} de ${fmtNum(l.total_cnes)} CNES com item`,
         { className: 'dash-mapa-tooltip' }
       );
       _mapaLayers.push(marker);
@@ -581,11 +686,15 @@ async function renderMapa(porUF) {
     setTimeout(() => _mapaInst.invalidateSize(), 200);
   });
 
+  document.getElementById('mapaVazio').innerHTML = comCadastro.length ? '' : `
+    <div class="vazio"><div class="ico">🗺️</div><h3>Nenhuma UF com cadastro ainda</h3>
+    <p>Nenhum item do combo foi registrado para os filtros atuais nesta competência.</p></div>`;
+
   document.getElementById('mapaLegenda').innerHTML = `
     <div class="dash-mapa-legenda-item"><div class="dash-mapa-legenda-cor" style="background:var(--red)"></div>Cobertura baixa (&lt;30%)</div>
     <div class="dash-mapa-legenda-item"><div class="dash-mapa-legenda-cor" style="background:#c9a300"></div>Cobertura parcial (30–69%)</div>
     <div class="dash-mapa-legenda-item"><div class="dash-mapa-legenda-cor" style="background:var(--green)"></div>Cobertura alta (≥70%)</div>
-    <div class="dash-mapa-legenda-item" style="margin-left:auto">Tamanho do círculo = nº de CNES na UF</div>
+    <div class="dash-mapa-legenda-item" style="margin-left:auto">Tamanho do círculo = volume de itens cadastrados na UF</div>
   `;
 }
 
@@ -613,29 +722,29 @@ async function carregarEvolucao() {
   carregarChartJs(() => {
     const labels = dados.map(d => fmtCompetencia(d.competencia));
     const itens = dados.map(d => d.itens_cadastrados);
-    const cobertura = dados.map(d => d.pct_cadastro);
+    const meta = metaTotal();
+    const metaLinha = labels.map(() => meta);
 
     const ctx = document.getElementById('chartPanorama').getContext('2d');
     if (_chartPanorama) _chartPanorama.destroy();
 
     const gradiente = ctx.createLinearGradient(0, 0, 0, 300);
-    gradiente.addColorStop(0, 'rgba(19,81,180,0.35)');
-    gradiente.addColorStop(1, 'rgba(19,81,180,0.02)');
+    gradiente.addColorStop(0, 'rgba(19,81,180,0.45)');
+    gradiente.addColorStop(1, 'rgba(19,81,180,0.05)');
 
     _chartPanorama = new Chart(ctx, {
       data: {
         labels,
         datasets: [
           {
-            type: 'bar', label: 'Itens do combo cadastrados (unidades)',
+            type: 'bar', label: 'Itens cadastrados',
             data: itens, backgroundColor: gradiente, borderColor: '#1351B4', borderWidth: 1.5,
-            borderRadius: 6, yAxisID: 'y', order: 2,
+            borderRadius: 6, order: 2,
           },
           {
-            type: 'line', label: 'Cobertura de equipamentos (%)',
-            data: cobertura, borderColor: '#168821', backgroundColor: '#168821',
-            borderWidth: 3, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#168821',
-            yAxisID: 'y1', order: 1,
+            type: 'line', label: `Meta de entrega (${fmtNum(meta)} unidades)`,
+            data: metaLinha, borderColor: '#E52207', borderDash: [8, 5],
+            borderWidth: 2, pointRadius: 0, fill: false, order: 1,
           },
         ],
       },
@@ -643,12 +752,11 @@ async function carregarEvolucao() {
         responsive: true,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'top', labels: { font: { family: 'Raleway', weight: '600' }, boxWidth: 14, padding: 16 } },
-          tooltip: { backgroundColor: '#1C1C1C', padding: 10, cornerRadius: 8, titleFont: { family: 'Raleway' }, bodyFont: { family: 'Raleway' } },
+          legend: { position: 'top', labels: { font: { family: 'Inter', weight: '600' }, boxWidth: 14, padding: 16 } },
+          tooltip: { backgroundColor: '#1C1C1C', padding: 10, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } },
         },
         scales: {
-          y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Itens cadastrados' }, grid: { color: '#f0f0f5' } },
-          y1: { position: 'right', beginAtZero: true, max: 100, title: { display: true, text: 'Cobertura (%)' }, grid: { drawOnChartArea: false } },
+          y: { beginAtZero: true, title: { display: true, text: 'Unidades' }, grid: { color: '#f0f0f5' } },
           x: { grid: { display: false } },
         },
       },
@@ -702,6 +810,7 @@ function baixarPrioridadeCSV() {
 // ---------------------------------------------------------------------------
 async function carregarDetalhe(acumular) {
   const params = filtroParams({ competencia: filtroState.competencia, limit: DETALHE_LIMIT, offset: detalheOffset });
+  if (document.getElementById('fApenasComItem').checked) params.apenas_com_item = 1;
   const dados = await fetch(apiUrl('data', params)).then(r => r.json());
 
   document.getElementById('detalheTitulo').textContent = `Registros em ${fmtCompetencia(dados.competencia)}`;

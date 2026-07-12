@@ -1,7 +1,8 @@
-# CLAUDE.md — Memória Principal do Projeto Painel Combo
+# CLAUDE.md — Memória Principal do Projeto CNES Combo
 
 > Leia este arquivo antes de qualquer mudança relevante no projeto.
-> Projeto irmão: **Painel Credenciamento** (`gaiafranklinalexandre-blip/Credenciamentos`) — mesma arquitetura, reaproveitada aqui.
+> Nome do painel: **CNES Combo**. Projeto irmão: **Painel Credenciamento** (`gaiafranklinalexandre-blip/Credenciamentos`) — mesma arquitetura, reaproveitada aqui.
+> Fonte do painel: **Inter** (não Raleway — trocada por legibilidade a pedido do usuário).
 
 ---
 
@@ -53,7 +54,7 @@ Isso também cobre os dois cenários possíveis de exportação mensal (arquivo 
 | `sync_combo.py` | Raiz do repo | Lê CSV, normaliza, envia para API |
 | `sync-combo.php` | Hostinger (manual) | API PHP + MySQL — **gitignored**, contém credenciais reais |
 | `equipamentos_combo.csv` | Raiz local | Base mensal — **gitignored**, não versionar |
-| `index.html` | Raiz do repo (a criar) | Frontend do painel |
+| `index.html` | Raiz do repo | Frontend do painel (CNES Combo) |
 
 ---
 
@@ -84,10 +85,23 @@ O painel **não é um espelho da base** — ele precisa calcular quantos equipam
 
 ### Métricas derivadas dessa regra
 - **Itens do combo cadastrados** (volume): `SUM(incremento_combo)` — quantas unidades a mais foram registradas desde a baseline.
-- **Cobertura (% de cadastro dos equipamentos)**: proporção de slots `(cnes × equipamento)` com `incremento_combo > 0` sobre o total de slots — mede quantos dos "espaços esperados" já receberam pelo menos 1 unidade do combo. Não confundir com o volume: um CNES pode ter `incremento_combo = 5` num único equipamento e isso conta como 1 slot coberto.
+- **Cobertura (% de cadastro dos equipamentos)**: proporção de slots `(cnes × equipamento)` com `incremento_combo > 0` sobre o total de slots — mede quantos dos "espaços esperados" já receberam pelo menos 1 unidade do combo. Não confundir com o volume: um CNES pode ter `incremento_combo = 5` num único equipamento e isso conta como 1 slot coberto. Usada nos rankings por UF e por equipamento.
 - **CNES com pelo menos 1 item do combo**: `COUNT(DISTINCT cnes)` onde algum equipamento daquele CNES tem `incremento_combo > 0` na competência.
 - **Lista de prioridade de contato**: CNES onde `SUM(incremento_combo) = 0` em todos os equipamentos na competência mais recente — candidatos a contato ativo, pois ainda não começaram a cadastrar nenhum item do combo. Exportável em CSV com UF/município para facilitar a ação.
-- **Panorama (gráfico de evolução)**: série temporal de `itens_cadastrados` e `% cobertura` por competência — mostra o crescimento do cadastro ao longo do tempo desde a baseline.
+- **Panorama (gráfico de evolução)**: série temporal de `itens_cadastrados` por competência, comparada à meta de entrega (ver regra abaixo) — mostra o crescimento do cadastro ao longo do tempo desde a baseline.
+
+---
+
+## Regra crítica de negócio: meta de entrega (10.000 por equipamento)
+
+O plano de entrega do combo prevê **10.000 unidades de cada um dos equipamentos** (constante `TARGET_POR_EQUIPAMENTO` no `index.html`, hoje 16 tipos de equipamento — número lido dinamicamente de `?action=filtros`).
+
+- **Meta nacional total** = `10.000 × número de tipos de equipamento em escopo` (1 se o filtro de equipamento estiver ativo; senão, todos os tipos existentes na base).
+- A meta é **calculada só a partir do filtro de equipamento** — filtros de UF/município/CNES **não** reduzem a meta proporcionalmente, porque não há regra de distribuição geográfica do plano de entrega. Isso é intencional: ao filtrar por uma UF pequena, o "Progresso da meta" no KPI e no panorama continua comparando contra o total nacional (é avisado na tela via `secao-sub`).
+- Usada em dois lugares do `index.html`:
+  - KPI **"Progresso da meta de entrega"** = `itens_cadastrados / meta_total`.
+  - Gráfico **Panorama**: barra de `itens_cadastrados` por competência + linha tracejada horizontal fixa na meta.
+- Se o plano de entrega mudar (novo valor por equipamento, ou meta que varie por UF/tipo), ajustar `TARGET_POR_EQUIPAMENTO` e a função `metaTotal()` no `index.html` — hoje é um valor único fixo, não vem do banco.
 
 ---
 
@@ -99,11 +113,15 @@ O painel **não é um espelho da base** — ele precisa calcular quantos equipam
 - A API `?action=data` **exige filtro por competência** (padrão: mais recente) — o dataset normalizado passa de meio milhão de linhas, nunca devolver tudo de uma vez sem filtro.
 - Para o dashboard, preferir os endpoints agregados (`?action=stats`) em vez de processar o dataset bruto no navegador — volume é muito maior que o do Credenciamento.
 - Ao editar `index.html`, sempre fazer commit e push para `main`.
+- Fonte do painel é **Inter** (Google Fonts) — não trocar de volta para Raleway, foi pedido explícito por legibilidade.
+- Busca de município é **autocomplete** (texto livre + sugestões), não um `<select>` — a lista completa de municípios (com UF, pois o nome sozinho se repete no Brasil) é carregada uma vez em `allMunicipios` no `init()` via `?action=municipios`. Ao escolher uma sugestão, UF e município são setados juntos para evitar ambiguidade entre municípios homônimos de UFs diferentes.
+- O mapa Leaflet é **dinâmico**: só desenha UFs com `itens_cadastrados > 0` na competência filtrada (não mostra todas as 27 UFs sempre) — o tamanho do círculo reflete o volume de itens cadastrados, a cor reflete a cobertura (slots).
+- Ao selecionar um equipamento no filtro, o checkbox "Somente unidades com item cadastrado" da tabela detalhada é **auto-marcado** (`onEquipamentoChange()`), para responder diretamente "quais unidades já têm esse equipamento".
 
 ---
 
 ## Próximos passos
 
-1. Desenhar o frontend (`index.html`): KPIs, filtros (UF/município/competência/equipamento), tabela por estabelecimento, indicador de % combo completo por CNES.
-2. Definir regra de negócio de "combo completo" (ex: todos os 16 equipamentos com `ativo = SIM` na competência).
-3. Subir `sync-combo.php` manualmente no Hostinger e rodar `sync_combo.py` pela primeira vez.
+1. Subir `sync-combo.php` manualmente no Hostinger e rodar `sync_combo.py` pela primeira vez (~964 mil registros normalizados, ~322 lotes de 3.000).
+2. Validar o painel em produção (`https://cnescombo.onrender.com`) com dados reais.
+3. Revisar se a meta de 10.000/equipamento continua válida conforme o plano de entrega evolui (ver regra acima).
