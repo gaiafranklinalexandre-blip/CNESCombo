@@ -31,7 +31,7 @@ Painel web de monitoramento do **Combo de Equipamentos da APS** — kit de equip
 equipamentos_combo.csv (exportado mensalmente, formato largo: colunas QT_YYYYMM/ATIVO_YYYYMM crescem todo mês)
   ↓ sync_combo.py (Python) — detecta colunas de competência automaticamente e normaliza (melt) para formato longo
 API PHP (sync-combo.php — Hostinger, NÃO está no GitHub)
-  ↓ MySQL — tabela combo_equipamentos (upsert por cnes + co_equipamento + competencia, nunca trunca)
+  ↓ MySQL — tabela combo_equipamentos (upsert por cnes + co_equipamento + co_tipo_equipamento + competencia, nunca trunca)
 index.html (a construir) ← fetch API em tempo real
 ```
 
@@ -42,7 +42,9 @@ O CSV de origem chega em formato **largo**: cada exportação mensal adiciona um
 Em vez disso, `sync_combo.py`:
 1. Detecta dinamicamente (via regex) todos os pares `QT_*/ATIVO_*` presentes no cabeçalho do CSV recebido — sem precisar de mudança de código quando um mês novo aparece.
 2. Transforma (melt) cada linha larga em N linhas longas: uma por `(cnes, equipamento, competência)`.
-3. Envia para `sync-combo.php?action=sync_combo`, que faz **upsert** (`INSERT ... ON DUPLICATE KEY UPDATE`) na chave única `(cnes, co_equipamento, competencia)` — nunca faz `TRUNCATE`, então competências antigas não enviadas no arquivo do mês corrente são preservadas.
+3. Envia para `sync-combo.php?action=sync_combo`, que faz **upsert** (`INSERT ... ON DUPLICATE KEY UPDATE`) na chave única `(cnes, co_equipamento, co_tipo_equipamento, competencia)` — nunca faz `TRUNCATE`, então competências antigas não enviadas no arquivo do mês corrente são preservadas.
+
+> ⚠️ **Bug histórico corrigido em 2026-07-17**: a chave única viveu por um tempo como só `(cnes, co_equipamento, competencia)`, sem `co_tipo_equipamento`. Como `co_equipamento` sozinho **se repete** entre equipamentos diferentes (ex: código `03` é tanto BALANÇA ANTROPOMÉTRICA quanto FOTÓFORO CLÍNICO), o upsert tratava dois equipamentos distintos como o mesmo registro e um sobrescrevia o outro — sumindo 4 dos 16 equipamentos do combo da base. Se essa classe de bug reaparecer (equipamentos faltando em `?action=filtros`), suspeitar primeiro de joins/chaves usando `co_equipamento` sem `co_tipo_equipamento` junto.
 
 Isso também cobre os dois cenários possíveis de exportação mensal (arquivo trazendo só a competência nova, ou trazendo o histórico completo) sem precisar de lógica condicional — o upsert é idempotente nos dois casos.
 
@@ -69,7 +71,7 @@ Isso também cobre os dois cenários possíveis de exportação mensal (arquivo 
 - Uma linha por `(CNES, equipamento)` — não por competência.
 
 ### Destino (tabela `combo_equipamentos`, MySQL)
-Uma linha por `(cnes, co_equipamento, competencia)`. Campos: `cnes, nome_fantasia, uf, municipio, ds_equipamento, co_tipo_equipamento, co_equipamento, competencia (DATE), quantidade, ativo`.
+Uma linha por `(cnes, co_equipamento, co_tipo_equipamento, competencia)`. Campos: `cnes, nome_fantasia, uf, municipio, ds_equipamento, co_tipo_equipamento, co_equipamento, competencia (DATE), quantidade, ativo`.
 
 ---
 
@@ -115,8 +117,11 @@ O plano de entrega do combo prevê **10.000 unidades de cada um dos equipamentos
 - Ao editar `index.html`, sempre fazer commit e push para `main`.
 - Fonte do painel é **Inter** (Google Fonts) — não trocar de volta para Raleway, foi pedido explícito por legibilidade.
 - Busca de município é **autocomplete** (texto livre + sugestões), não um `<select>` — a lista completa de municípios (com UF, pois o nome sozinho se repete no Brasil) é carregada uma vez em `allMunicipios` no `init()` via `?action=municipios`. Ao escolher uma sugestão, UF e município são setados juntos para evitar ambiguidade entre municípios homônimos de UFs diferentes.
-- O mapa Leaflet é **dinâmico**: só desenha UFs com `itens_cadastrados > 0` na competência filtrada (não mostra todas as 27 UFs sempre) — o tamanho do círculo reflete o volume de itens cadastrados, a cor reflete a cobertura (slots).
+- O mapa Leaflet é **por município** (não por UF) e **dinâmico**: só desenha municípios com `itens_cadastrados > 0` na competência filtrada. Posições vêm de `MUNICIPIO_COORDS`, um objeto `{"UF|NOME_SEM_ACENTO": [lat,lon]}` com ~5.078 municípios embutido diretamente no `index.html` (~190KB), casado a partir da base pública `kelvins/municipios-brasileiros` (IBGE) por nome normalizado + UF. 27 municípios da base do combo não bateram o nome (a maioria são Regiões Administrativas do DF, que não existem como município no IBGE) e por isso não aparecem no mapa — isso é esperado, não é bug. Os dados do mapa vêm de `?action=ranking&tipo=municipio&apenas_com_item=1&limit=6000`, não de `?action=stats`.
+- Se a base de origem trouxer municípios novos no futuro, rodar novamente `scripts/build_municipio_coords.py` (instruções no topo do arquivo) e colar o novo `MUNICIPIO_COORDS` no `index.html` — não há atualização automática desse lookup.
 - Ao selecionar um equipamento no filtro, o checkbox "Somente unidades com item cadastrado" da tabela detalhada é **auto-marcado** (`onEquipamentoChange()`), para responder diretamente "quais unidades já têm esse equipamento".
+- Rankings "Top estabelecimentos" e "Top municípios" (`?action=ranking&tipo=cnes|municipio`) ordenam por `itens_cadastrados DESC` no próprio SQL — quem cadastrou mais fica no topo.
+- Não existe (ainda) uma "fila de prioridade de contato" no painel — foi removida a pedido do usuário porque `incremento_combo` mede cadastro no CNES, não confirma que o equipamento foi fisicamente recebido. Só reintroduzir esse tipo de lista se houver uma fonte de dado que confirme recebimento de fato.
 
 ---
 
