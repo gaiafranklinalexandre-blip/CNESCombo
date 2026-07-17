@@ -517,7 +517,7 @@ async function init() {
     totalEquipamentos = filtros.equipamentos.length;
 
     allMunicipios = await fetchJson(apiUrl('municipios'));
-    allMunicipios.sort((a, b) => a.municipio.localeCompare(b.municipio, 'pt-BR'));
+    allMunicipios.sort((a, b) => (a.municipio || '').localeCompare(b.municipio || '', 'pt-BR'));
 
     document.getElementById('headerAtt').textContent =
       filtros.competencias.length ? `Última competência disponível: ${fmtCompetencia(filtros.competencias[0])}` : '';
